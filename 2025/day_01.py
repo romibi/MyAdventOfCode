@@ -1,5 +1,5 @@
 DO_LOG = True
-
+PUZZLE_NR = 2
 
 def main():
     #input = read_input('day_01_puzzle_1_input_small.txt')
@@ -33,6 +33,9 @@ def handle(line, dial, password):
         dial += rot
     else:
         print('!!!!!!!!!!!!!!!!! INVALID INPUT !!!!!!!!!!!!!!!!')
+
+    if (PUZZLE_NR == 2) and (dial > 99 or dial < 0):
+        password += 1
 
     dial = dial % 100
 
