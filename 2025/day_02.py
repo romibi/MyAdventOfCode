@@ -1,3 +1,5 @@
+PUZZLE_NR=2
+
 def main():
     # input = read_input('day_02_puzzle_1_input_small.txt')
     input = read_input('day_02_puzzle_1_input.txt')
@@ -38,13 +40,13 @@ def test_ranges(ranges):
 def test_range(arange):
     invalid_ids = []
     for x in range(arange[0], arange[1]+1): # inclusive ranges
-        if not test_id(x):
+        if (PUZZLE_NR==1 and (not test_id_1(x))) or (PUZZLE_NR==2 and (not test_id_2(x))):
             print(f"Range {arange[0]}-{arange[1]}: Invalid Id: {x}")
             invalid_ids += [x]
     return invalid_ids
 
 
-def test_id(x):
+def test_id_1(x):
     xstr = str(x)
     if (len(xstr) % 2) == 1: # length not divisible by 2: not one of the silly patterns
         return True
@@ -55,6 +57,20 @@ def test_id(x):
         return False
 
     return True
+
+
+def test_id_2(x):
+    xstr = str(x)
+
+    for char_num in range(1, len(xstr)//2): # up until len divided by 2 because afterwards no repeating pattern possible
+        pattern = xstr[:char_num]
+        if len(xstr) % len(pattern) != 0:
+            continue # pattern not fitting into id length: no nice pattern -> wrong pattern or valid id
+        pattern_times = len(xstr) // len(pattern)
+        str_match = pattern * pattern_times
+        if xstr == str_match:
+            return False # it's a silly pattern, not valid
+    return True # no silly pattern found
 
 
 if __name__ == '__main__':
