@@ -39,6 +39,7 @@ def test_ranges(ranges):
 
 def test_range(arange):
     invalid_ids = []
+    # print(f"Testing Range {arange[0]}-{arange[1]}")
     for x in range(arange[0], arange[1]+1): # inclusive ranges
         if (PUZZLE_NR==1 and (not test_id_1(x))) or (PUZZLE_NR==2 and (not test_id_2(x))):
             print(f"Range {arange[0]}-{arange[1]}: Invalid Id: {x}")
@@ -62,7 +63,7 @@ def test_id_1(x):
 def test_id_2(x):
     xstr = str(x)
 
-    for char_num in range(1, len(xstr)//2): # up until len divided by 2 because afterwards no repeating pattern possible
+    for char_num in range(1, (len(xstr)//2)+1): # up until len divided by 2 because afterwards no repeating pattern possible
         pattern = xstr[:char_num]
         if len(xstr) % len(pattern) != 0:
             continue # pattern not fitting into id length: no nice pattern -> wrong pattern or valid id
