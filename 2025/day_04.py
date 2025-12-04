@@ -1,6 +1,6 @@
 from numpy.matlib import empty
 
-PUZZLE_NR=1
+PUZZLE_NR=2
 
 class Paper:
     def __init__(self):
@@ -11,11 +11,27 @@ def main():
     input = read_input('day_04_puzzle_1_input.txt')
 
     floor_map = generate_map(input)
-    floor_map, accessibility_count = calculate_floor_accessibility(floor_map)
+    if PUZZLE_NR==1:
+        floor_map, accessibility_count = calculate_floor_accessibility(floor_map)
+    else:
+        accessibility_count = 0
 
-    print(floor_map)
+        while(True):
+            floor_map, it_accessibility_count = calculate_floor_accessibility(floor_map)
+            accessibility_count += it_accessibility_count
+            print(f"Remove {it_accessibility_count} rolls of papaer:")
+            print_map(floor_map)
+            print("")
+            floor_map = clean_map(floor_map)
+            if it_accessibility_count == 0:
+                break
+
+    print_map(floor_map)
     print("")
-    print(f"There are {accessibility_count} Rolls accessible ...")
+    if PUZZLE_NR==1:
+        print(f"There are {accessibility_count} Rolls accessible ...")
+    else:
+        print(f"There are {accessibility_count} Rolls removed ...")
 
 
 def read_input(file):
@@ -86,6 +102,33 @@ def calculate_paper_accessibility(y, x, floor_map):
 
     return floor_map[y][x].accessible
 
+
+def clean_map(floor_map):
+    width = len(floor_map[0])
+    height = len(floor_map)
+
+    for y in range(0,height):
+        for x in range(0,width):
+            if floor_map[y][x] and floor_map[y][x].accessible:
+                floor_map[y][x] = None
+    return floor_map
+
+
+# added for part 2
+def print_map(floor_map):
+    width = len(floor_map[0])
+    height = len(floor_map)
+
+    for y in range(0,height):
+        for x in range(0,width):
+            if floor_map[y][x]:
+                if floor_map[y][x].accessible:
+                    print("X",end="")
+                else:
+                    print("@",end="")
+            else:
+                print(".",end="")
+        print("")
 
 if __name__ == '__main__':
     main()
