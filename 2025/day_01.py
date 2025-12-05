@@ -4,12 +4,12 @@ DO_LOG = True
 PUZZLE_NR = 2
 
 def main():
-    #input = read_input('day_01_puzzle_1_input_small.txt')
-    #input = read_input('day_01_puzzle_1_input_small_custom.txt')
-    input = read_input('day_01_puzzle_1_input.txt')
+    # puzzle_input = read_input('day_01_puzzle_input_small.txt')
+    # puzzle_input = read_input('day_01_puzzle_input_small_custom.txt')
+    puzzle_input = read_input('day_01_puzzle_input.txt')
 
     dial = 50
-    password = parse_input(input, dial)
+    password = parse_input(puzzle_input, dial)
 
     print()
     print(f"The password is {password}")
@@ -19,9 +19,9 @@ def read_input(file):
         return f.readlines()
 
 
-def parse_input(input, dial):
+def parse_input(puzzle_input, dial):
     password = 0
-    for line in input:
+    for line in puzzle_input:
         dial, password = handle(line, dial, password)
     return password
 
@@ -43,7 +43,7 @@ def handle(line, dial, password):
         print('!!!!!!!!!!!!!!!!! INVALID INPUT !!!!!!!!!!!!!!!!')
 
     additional_log = ""
-    if (PUZZLE_NR == 2):
+    if PUZZLE_NR == 2:
         passed_zero_times = floor((rot+add_to_rot)/100)
         password += passed_zero_times
         #log(f"dial: {dial_old} → {dial}, rot: {rot}, add_to_rot: {add_to_rot}, extended_rot: {rot+add_to_rot}, passed 0: {(rot+add_to_rot)/100} times?")

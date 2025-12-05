@@ -1,10 +1,10 @@
 PUZZLE_NR=2
 
 def main():
-    # input = read_input('day_03_puzzle_1_input_small.txt')
-    input = read_input('day_03_puzzle_1_input.txt')
+    # puzzle_input = read_input('day_03_puzzle_input_small.txt')
+    puzzle_input = read_input('day_03_puzzle_input.txt')
 
-    total_joltage = calculate_total_joltage(input)
+    total_joltage = calculate_total_joltage(puzzle_input)
 
     print("")
     print(f"The total joltage is {total_joltage}")
@@ -17,9 +17,9 @@ def read_input(file):
         return f.readlines()
 
 
-def calculate_total_joltage(input):
+def calculate_total_joltage(puzzle_input):
     result = 0
-    for bank in input:
+    for bank in puzzle_input:
         if PUZZLE_NR == 1:
             result += calculate_joltage_1(bank.strip())
         else: # PUZZLE_NR == 2

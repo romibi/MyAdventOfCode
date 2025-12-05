@@ -1,9 +1,9 @@
 PUZZLE_NR=2
 
 def main():
-    # input = read_input('day_02_puzzle_1_input_small.txt')
-    input = read_input('day_02_puzzle_1_input.txt')
-    ranges = parse_input(input)
+    # puzzle_input = read_input('day_02_puzzle_input_small.txt')
+    puzzle_input = read_input('day_02_puzzle_input.txt')
+    ranges = parse_input(puzzle_input)
 
     invalid_ids = test_ranges(ranges)
 
@@ -18,9 +18,9 @@ def read_input(file):
         return f.readlines()
 
 
-def parse_input(input):
+def parse_input(puzzle_input):
     out_ranges = []
-    for line in input: # although all is 1 line?
+    for line in puzzle_input: # although all is 1 line?
         int_ranges = []
         string_ranges = line.split(',')
         for string_range in string_ranges:
@@ -37,12 +37,12 @@ def test_ranges(ranges):
     return invalid_ids
 
 
-def test_range(arange):
+def test_range(range_to_test):
     invalid_ids = []
-    # print(f"Testing Range {arange[0]}-{arange[1]}")
-    for x in range(arange[0], arange[1]+1): # inclusive ranges
+    # print(f"Testing Range {range_to_test[0]}-{range_to_test[1]}")
+    for x in range(range_to_test[0], range_to_test[1] + 1): # inclusive ranges
         if (PUZZLE_NR==1 and (not test_id_1(x))) or (PUZZLE_NR==2 and (not test_id_2(x))):
-            print(f"Range {arange[0]}-{arange[1]}: Invalid Id: {x}")
+            print(f"Range {range_to_test[0]}-{range_to_test[1]}: Invalid Id: {x}")
             invalid_ids += [x]
     return invalid_ids
 

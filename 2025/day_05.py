@@ -15,10 +15,10 @@ class FreshRange:
 
 
 def main():
-    # input = read_input('day_05_puzzle_1_input_small.txt')
-    input = read_input('day_05_puzzle_1_input.txt')
+    # puzzle_input = read_input('day_05_puzzle_input_small.txt')
+    puzzle_input = read_input('day_05_puzzle_input.txt')
 
-    fresh_ranges, ingredients, lowest_id, higest_id = parse_input(input)
+    fresh_ranges, ingredients, lowest_id, higest_id = parse_input(puzzle_input)
 
     if PUZZLE_NR == 1:
         fresh_count = test_ingredients(fresh_ranges, ingredients)
@@ -36,7 +36,7 @@ def read_input(file):
         return f.readlines()
 
 
-def parse_input(input):
+def parse_input(puzzle_input):
     line_nr = 0
     fresh_ranges = []
     ingredients = []
@@ -44,8 +44,8 @@ def parse_input(input):
     lowest_id = +Infinity
     highest_id = -Infinity
 
-    while input[line_nr].strip() != '':
-        range_line = input[line_nr]
+    while puzzle_input[line_nr].strip() != '':
+        range_line = puzzle_input[line_nr]
         parsed_range = parse_range(range_line)
 
         # Added for Part 2
@@ -60,8 +60,8 @@ def parse_input(input):
 
     line_nr += 1 # ignore empty line between blocks
 
-    while line_nr < len(input):
-        ingredient_id = input[line_nr].strip()
+    while line_nr < len(puzzle_input):
+        ingredient_id = puzzle_input[line_nr].strip()
         ingredients += [int(ingredient_id)]
         line_nr += 1
 

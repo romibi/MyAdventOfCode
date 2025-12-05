@@ -1,4 +1,5 @@
-from numpy.matlib import empty
+import typing
+from typing import List
 
 PUZZLE_NR=2
 
@@ -7,19 +8,19 @@ class Paper:
         self.accessible = False
 
 def main():
-    # input = read_input('day_04_puzzle_1_input_small.txt')
-    input = read_input('day_04_puzzle_1_input.txt')
+    # puzzle_input = read_input('day_04_puzzle_input_small.txt')
+    puzzle_input = read_input('day_04_puzzle_input.txt')
 
-    floor_map = generate_map(input)
+    floor_map = generate_map(puzzle_input)
     if PUZZLE_NR==1:
         floor_map, accessibility_count = calculate_floor_accessibility(floor_map)
     else:
         accessibility_count = 0
 
-        while(True):
+        while True:
             floor_map, it_accessibility_count = calculate_floor_accessibility(floor_map)
             accessibility_count += it_accessibility_count
-            print(f"Remove {it_accessibility_count} rolls of papaer:")
+            print(f"Remove {it_accessibility_count} rolls of paper:")
             print_map(floor_map)
             print("")
             floor_map = clean_map(floor_map)
@@ -39,14 +40,13 @@ def read_input(file):
         return f.readlines()
 
 
-def generate_map(input):
-    width = len(input[0].strip())
-    height = len(input)
+def generate_map(puzzle_input):
+    width = len(puzzle_input[0].strip())
+    height = len(puzzle_input)
 
-    # floor_map = empty((height, width))
-    floor_map = [[0 for x in range(width)] for y in range(height)]
+    floor_map: List[List[typing.Union[Paper, None]]] = [[None for _ in range(width)] for _ in range(height)]
 
-    for y, line in enumerate(input):
+    for y, line in enumerate(puzzle_input):
         for x, char in enumerate(line.strip()):
             if char == "@":
                 floor_map[y][x] = Paper()
@@ -62,8 +62,8 @@ def calculate_floor_accessibility(floor_map):
     for y in range(0,height):
         for x in range(0,width):
             if floor_map[y][x]:
-                accesible = calculate_paper_accessibility(y, x, floor_map)
-                if accesible:
+                accessible = calculate_paper_accessibility(y, x, floor_map)
+                if accessible:
                     accessibility_count+=1
     return floor_map, accessibility_count
 
