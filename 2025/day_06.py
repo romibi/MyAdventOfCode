@@ -1,13 +1,16 @@
 import re
 
-PUZZLE_NR=1
+PUZZLE_NR=2
 
 def main():
     # puzzle_input = read_input('day_06_puzzle_input_small.txt')
     puzzle_input = read_input('day_06_puzzle_input.txt')
 
     math_ops = get_math_operators(puzzle_input)
-    grand_total = do_math(puzzle_input, math_ops)
+    if PUZZLE_NR==1:
+        grand_total = do_math_1(puzzle_input, math_ops)
+    else:
+        grand_total = do_math_2(puzzle_input, math_ops)
 
     print("")
     print(f"The grand total is {grand_total}")
@@ -25,7 +28,7 @@ def get_math_operators(puzzle_input):
     return math_ops
 
 
-def do_math(puzzle_input, math_ops):
+def do_math_1(puzzle_input, math_ops):
     intermediate_results = re.split(r" +", puzzle_input[0].strip())
     intermediate_results = [int(x) for x in intermediate_results]
     del puzzle_input[0]
@@ -40,6 +43,51 @@ def do_math(puzzle_input, math_ops):
                 intermediate_results[n] *= numbers[n]
 
     return sum(intermediate_results)
+
+
+def do_math_2(puzzle_input, math_ops):
+    math_puzzle_nr = 0
+    # not sure if i've saved the file wrong (editor trimmed spaces at end of line) or it the puzzle output just is like this
+    # this line (explicitly not trimming) did not help:
+    #line_width = len(puzzle_input[0].replace("\n", "")) # do not use strip. space at the end might be relevant
+    # lets loop to find the biggest value
+    line_width = 0
+    for line in puzzle_input:
+        line_width = max(line_width, len(line.rstrip()))
+
+    total_sum = 0
+    intermediate_result = -1
+
+    for n in range(0, line_width):
+        number_string = ""
+        for line in puzzle_input:
+            if len(line)>n:
+                number_string += line[n]
+
+        if number_string.strip() == '':
+            print(f" = {intermediate_result}")
+            total_sum += intermediate_result
+            # next math puzzle
+            intermediate_result = -1
+            math_puzzle_nr += 1
+            continue
+
+        parsed_number = int(number_string)
+        if intermediate_result == -1:
+            intermediate_result = parsed_number
+            print(f"Result of {parsed_number}",end="")
+        elif math_ops[math_puzzle_nr] == "+":
+            intermediate_result += parsed_number
+            print(f" + {parsed_number}", end="")
+        elif math_ops[math_puzzle_nr] == "*":
+            intermediate_result *= parsed_number
+            print(f" * {parsed_number}", end="")
+
+    print(f" = {intermediate_result}")
+    total_sum += intermediate_result
+    return total_sum
+
+
 
 if __name__ == '__main__':
     main()
