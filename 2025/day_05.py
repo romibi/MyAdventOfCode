@@ -1,5 +1,4 @@
 from typing import List
-
 from numpy import Infinity
 
 PUZZLE_NR=2
