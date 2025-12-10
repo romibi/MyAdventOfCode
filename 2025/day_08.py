@@ -3,7 +3,10 @@ from typing import Tuple, Optional, List
 
 from numpy import Infinity
 
-PUZZLE_NR=1
+# Warning: With the current code the full Puzzle 2 takes multiple hours (4?) on an i9-9900K
+PUZZLE_NR=2
+USE_SMALL=False
+
 next_circuit_id = 0
 
 class Circuit:
@@ -80,9 +83,6 @@ class JunctionBox:
 
 
 def main():
-
-    USE_SMALL = False
-
     if USE_SMALL:
         puzzle_input = read_input('day_08_puzzle_input_small.txt')
         connection_count = 10
@@ -90,14 +90,21 @@ def main():
         puzzle_input = read_input('day_08_puzzle_input.txt')
         connection_count = 1000
 
+    if PUZZLE_NR==2:
+        connection_count=-1
+
     junction_boxes = parse_input(puzzle_input)
     calculate_all_distances(junction_boxes)
 
-    circuits = make_connections(junction_boxes, connection_count)
-    puzzle_result = calculate_size_of_x_largest(circuits, 3)
+    circuits, last_connection = make_connections(junction_boxes, connection_count)
 
-    print("")
-    print(f"The sizes of the largest circuits combined is: {puzzle_result}")
+    if PUZZLE_NR==1:
+        puzzle_result = calculate_size_of_x_largest(circuits, 3)
+
+        print("")
+        print(f"The sizes of the largest circuits combined is: {puzzle_result}")
+    else:
+        print(f"The x coordinates of the last connection ({last_connection[0].pos}-{last_connection[1].pos}) multiplied is: {last_connection[0].pos[0]*last_connection[1].pos[0]}")
 
 
 def read_input(file):
@@ -124,9 +131,11 @@ def find_shortest_open_connection(junction_boxes) -> Tuple[JunctionBox, Junction
     assert len(junction_boxes)>=2
 
     current_shortest_dist = Infinity
-    current_shortest: Tuple[JunctionBox, JunctionBox] = (junction_boxes[0], junction_boxes[1])
+    current_shortest: Tuple[Optional[JunctionBox], Optional[JunctionBox]] = (None, None)
 
     for junction_box_a in junction_boxes:
+        if len(junction_box_a.unconnected_distances)<=0:
+            continue
         item = next(iter(junction_box_a.unconnected_distances.items()))
         obj_id = item[0]
         dist = item[1]
@@ -153,8 +162,17 @@ def find_shortest_open_connection(junction_boxes) -> Tuple[JunctionBox, Junction
 
 def make_connections(junction_boxes, connection_count):
     circuits: List[Circuit] = []
-    for i in range(0, connection_count):
+    last_connection: Tuple[Optional[JunctionBox], Optional[JunctionBox]] = (None, None)
+    i = 0
+    while True:
+        i += 1
+        if connection_count != -1 and i > connection_count:
+            break
+
         junction_box1, junction_box2 = find_shortest_open_connection(junction_boxes)
+        if junction_box1 is None or junction_box2 is None:
+            break
+
         if junction_box1.circuit is not None and junction_box2.circuit is not None and junction_box1.circuit==junction_box2.circuit:
             junction_box1.skipped_direct_connection.append(junction_box2)
             junction_box2.skipped_direct_connection.append(junction_box1)
@@ -162,10 +180,11 @@ def make_connections(junction_boxes, connection_count):
             del junction_box2.unconnected_distances[id(junction_box1)]
             print(f"Skipped connection between {junction_box1.pos} and {junction_box2.pos}")
         elif junction_box1.circuit is None or junction_box2.circuit is None or junction_box1.circuit != junction_box2.circuit:
+            last_connection = (junction_box1, junction_box2)
             connected_circuit, new_circuit = junction_box1.connect_to(junction_box2)
             if new_circuit:
                 circuits.append(connected_circuit)
-    return circuits
+    return circuits, last_connection
 
 
 
