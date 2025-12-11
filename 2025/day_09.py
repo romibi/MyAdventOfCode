@@ -2,8 +2,10 @@ from typing import Tuple, List
 from numpy import Infinity
 
 PUZZLE_NR=2
-USE_SMALL=True
+USE_SMALL=False
 
+# todo: do cleaner
+global_red_tiles_clockwise = -1 # -1 unknown, 0 no, 1 yes
 
 class RedTile:
     def __init__(self, pos: Tuple[int, int]):
@@ -34,7 +36,10 @@ class RedTile:
             other_red_tile = next((obj for obj in red_tiles if id(obj) == obj_id), None)
             if validate:
                 if validate_rectangle(self, other_red_tile, red_tiles):
+                    print(f"Valid Rectangle {self.pos}-{other_red_tile.pos}")
                     break
+                else:
+                    print(f"Invalid Rectangle {self.pos}-{other_red_tile.pos}")
             else:
                 break
         return other_red_tile, size
@@ -51,9 +56,21 @@ def validate_rectangle(tile_a, tile_b, red_tiles):
 
     last_red_tile = red_tiles[-1]
 
+    border_tiles = []
+    first_corner_tile = None
+    second_corner_tile = None
+
     for red_tile in red_tiles:
         if red_tile == tile_a or red_tile == tile_b:
+            if not first_corner_tile:
+                if red_tile == tile_a:
+                    first_corner_tile = tile_a
+                    second_corner_tile = tile_b
+                else:
+                    first_corner_tile = tile_b
+                    second_corner_tile = tile_a
             last_red_tile = red_tile
+            border_tiles.append(red_tile)
             continue
 
         if ((prohibited_area_min_x <= red_tile.pos[0] <= prohibited_area_max_x) and
@@ -67,14 +84,263 @@ def validate_rectangle(tile_a, tile_b, red_tiles):
             (last_red_tile.pos[1] > prohibited_area_max_y and red_tile.pos[1] > prohibited_area_max_y)):  # both below
             return False
 
+        if (
+            ( ((red_tile.pos[0] == tile_a.pos[0]) or (red_tile.pos[0] == tile_b.pos[0]) ) and ( min(tile_a.pos[1],tile_b.pos[1]) <= red_tile.pos[1] <= max(tile_a.pos[1],tile_b.pos[1]))) or # same x as tile_a or tile_b and on y between tile_a and tile_b
+            ( ((red_tile.pos[1] == tile_b.pos[1]) or (red_tile.pos[1] == tile_b.pos[1]) ) and ( min(tile_a.pos[0],tile_b.pos[0]) <= red_tile.pos[0] <= max(tile_a.pos[0],tile_b.pos[0])))
+        ):
+            border_tiles.append(red_tile)
+
         last_red_tile = red_tile
 
-    # TODO: shit ... still possible that this rectangle is invalid. if it is in a concave part of the shape
+    # shit ... still possible that this rectangle is invalid. if it is in a concave part of the shape
+    # now we need to know if the big shape is defined clockwise or counterclockwise
+    # if we collect all tiles on the border of the rectangle and go around the rectangle the same direction
+    # (clockwise/counterclockwise) the border tiles should be in the same order as in the shape list
+    # otherwise we are on a concave part of the shape
+    # LOOOOTS OF UGLY CODE FOLLOWS
+
+    def IsClockwise(tiles):
+        prev_tile = None
+        prev_direction = -1 # -1: unknown, 0: up, 1: right, 2: down, 3: left
+        turn_direction = 0 # positive value: clockwise, negative value: counterclockwise
+
+        for tile in tiles:
+
+            if not prev_tile:
+                prev_tile = tile
+                continue
+
+            if prev_tile.pos[1] > tile.pos[1]:
+                direction = 0 # up
+            elif prev_tile.pos[0] < tile.pos[0]:
+                direction = 1 # right
+            elif prev_tile.pos[1] < tile.pos[1]:
+                direction = 2 # down
+            elif prev_tile.pos[0] > tile.pos[0]:
+                direction = 3 # left
+            else:
+                assert False  # Shouldn't happen??
+
+            if prev_direction == -1:
+                prev_direction = direction
+                prev_tile = tile
+                continue
+
+            if prev_direction == 0:
+                if direction == 1:
+                    turn_direction += 1 # up -> right: clockwise
+                elif direction == 3:
+                    turn_direction -= 1 # up -> left: counter clockwise
+                else:
+                    assert False  # Shouldn't happen??
+            elif prev_direction == 1:
+                if direction == 0:
+                    turn_direction -= 1 # right -> up: counter clockwise
+                elif direction == 2:
+                    turn_direction += 1 # right -> down: clockwise
+                else:
+                    assert False  # Shouldn't happen??
+            elif prev_direction == 2:
+                if direction == 1:
+                    turn_direction -= 1 # down -> right: counter clockwise
+                elif direction == 3:
+                    turn_direction += 1 # down -> left: clockwise
+                else:
+                    assert False  # Shouldn't happen??
+            elif prev_direction == 3:
+                if direction == 0:
+                    turn_direction += 1 # left -> up: clockwise
+                elif direction == 2:
+                    turn_direction -= 1 # left -> down: counter clockwise
+                else:
+                    assert False  # Shouldn't happen??
+            else:
+                assert False # Shouldn't happen??
+
+            prev_tile = tile
+            prev_direction = direction
+
+        return turn_direction > 0
+
+    # shit ... still possible that this rectangle is invalid. if it is in a concave part of the shape
     # now we need to know if the big shape is defined clockwise or counterclockwise
     # if we collect all tiles on the border of the rectangle and go around the rectangle the same direction
     # (clockwise/counterclockwise) the border tiles should be in the same order as in the shape list
     # otherwise we are on a concave part of the shape
 
+    # print("Analyze if the red tile list is clockwise ... ")
+    # todo: nicer
+    global global_red_tiles_clockwise
+    if global_red_tiles_clockwise == -1:
+        shape_list_is_clockwise = IsClockwise(red_tiles)
+        if shape_list_is_clockwise:
+            global_red_tiles_clockwise = 1
+        else:
+            global_red_tiles_clockwise = 0
+    else:
+        shape_list_is_clockwise = global_red_tiles_clockwise==1
+    # print(f"The red tile list is clockwise? {shape_list_is_clockwise}")
+
+    ## if clockwise
+    ## 1-----
+    ## |  A  |
+    ##  -----2
+    ## -> each next border tile after 1 should have same y and higher x as 1 (or last border tile), or same x as 2 but lower y than 2 (but higher y than last border tile), or be 2
+    ## -> each next border tile after 2 should have same y and lower x as 2 (or last border tile), or same x as 1 but higher y than 1 (but lower y than last border tile)
+
+    ## 2-----
+    ## |  B  |
+    ##  -----1
+    ## -> each next border tile after 1 should have same y and lower x as 1 (or last border tile), or same x as 2 but higher y than 2 (but lower y than last border tile), or be 2
+    ## -> each next border tile after 2 should have same y and hgiher x as 2 (or last border tile), or same x as 1 but lower y than 1 (but higher y than last border tile)
+
+    ##  -----1
+    ## |  C  |
+    ## 2-----
+    ## -> each next border tile after 1 should have same x and higher y as 1 (or last border tile), or same y as 2 but higher x than 2 (but lower x than last border tile), or be 2
+    ## -> each next border tile after 2 should have same x and lower y as 2 (or last border tile), or same y as 1 but lower x than 1 (but higher x than last border tile)
+
+    ##  -----2
+    ## |  D  |
+    ## 1-----
+    ## -> each next border tile after 1 should have same x and lower y as 1 (or last border tile), or same y as 2 but lower x than 2 (but higher x than last border tile), or be 2
+    ## -> each next border tile after 2 should have same x and higher y as 2 (or last border tile), or same y as 2 but higher x than 1 (but lower x than last border tile)
+
+    case = ""
+
+    if (first_corner_tile.pos[0] < second_corner_tile.pos[0]) and (first_corner_tile.pos[1] < second_corner_tile.pos[1]):
+        case = "A"
+    elif (first_corner_tile.pos[0] > second_corner_tile.pos[0]) and (first_corner_tile.pos[1] > second_corner_tile.pos[1]):
+        case = "B"
+    elif (first_corner_tile.pos[0] > second_corner_tile.pos[0]) and (first_corner_tile.pos[1] < second_corner_tile.pos[1]):
+        case = "C"
+    elif (first_corner_tile.pos[0] < second_corner_tile.pos[0]) and (first_corner_tile.pos[1] > second_corner_tile.pos[1]):
+        case = "D"
+    else:
+        # The corners are on the same x or same y axis. lets assume they are small and irrelevant:
+        return False
+
+
+    def valid_right_of(start_tile, end_tile, last_tile, tile): # can be used for A Step 1 and B Step 3
+        if tile.pos[1] != start_tile.pos[1]:
+            return False
+
+        return last_tile.pos[0] < tile.pos[0] <= end_tile.pos[0]
+
+    def valid_right_down_of(_, end_tile, last_tile, tile): # can be used for A Step 2 and B Step 4
+        if tile.pos[0] != end_tile.pos[0]:
+            return False
+
+        return last_tile.pos[1] <= tile.pos[1] < end_tile.pos[1]
+
+    def valid_left_of(start_tile, end_tile, last_tile, tile): # can be used for A Step 3 and B Step 1
+        if tile.pos[1] != start_tile.pos[1]:
+            return False
+
+        return end_tile.pos[0] <= tile.pos[0] < last_tile.pos[0]
+
+    def valid_left_above_of(_, end_tile, last_tile, tile): # can be used for A Step 4 and B Step 2
+        if tile.pos[0] != end_tile.pos[0]:
+            return False
+
+        return end_tile.pos[1] < tile.pos[1] <= last_tile.pos[1]
+
+    def valid_below_of(start_tile, end_tile, last_tile, tile): # can be used for C Step 1 and D Step 3
+        if tile.pos[0] != start_tile.pos[0]:
+            return False
+
+        return last_tile.pos[1] < tile.pos[1] <= end_tile.pos[1]
+
+    def valid_below_left_of(_, end_tile, last_tile, tile): # can be used for C Step 2 and D Step 4
+        if tile.pos[1] != end_tile.pos[1]:
+            return False
+
+        return end_tile.pos[0] < tile.pos[0] <= last_tile.pos[0]
+
+    def valid_above_of(start_tile, end_tile, last_tile, tile): # cen be used for C Step 3 and D Step 1
+        if tile.pos[0] != start_tile.pos[0]:
+            return False
+
+        return end_tile.pos[1] <= tile.pos[1] < last_tile.pos[1]
+
+    def valid_above_right_of(_, end_tile, last_tile, tile): # can be used for C Step 4 and D Step 2
+        if tile.pos[1] != end_tile.pos[1]:
+            return False
+
+        return last_tile.pos[0] <= tile.pos[0] < end_tile.pos[0]
+
+    if case == "A":
+        first_border_condition = valid_right_of
+        second_border_condition = valid_right_down_of
+        third_border_condition = valid_left_of
+        forth_border_condition = valid_left_above_of
+    elif case == "B":
+        first_border_condition = valid_left_of
+        second_border_condition = valid_left_above_of
+        third_border_condition = valid_right_of
+        forth_border_condition = valid_right_down_of
+    elif case == "C":
+        first_border_condition = valid_below_of
+        second_border_condition = valid_below_left_of
+        third_border_condition = valid_above_of
+        forth_border_condition = valid_above_right_of
+    elif case == "D":
+        first_border_condition = valid_above_of
+        second_border_condition = valid_above_right_of
+        third_border_condition = valid_below_of
+        forth_border_condition = valid_below_left_of
+    else:
+        assert False # shouldn't happen
+
+
+    found_2 = False
+    took_corner = False
+    last_border_tile = None
+
+    # print(f"Check {len(border_tiles)} Border tiles ...")
+
+    while border_tiles[0] != first_corner_tile:
+        border_tiles = border_tiles[1:] + border_tiles[:1]
+
+    if not shape_list_is_clockwise:
+        # the booleans above can only be used for clockwise validity check (i think).
+        # lets reverse the order but because we still want to start with first_corner_tile, rotate first once more
+        border_tiles = border_tiles[1:] + border_tiles[:1]
+        border_tiles.reverse()
+
+    for border_tile in border_tiles:
+        if border_tile == first_corner_tile:
+            last_border_tile = border_tile
+            took_corner = False
+            continue
+
+        if border_tile == second_corner_tile:
+            found_2 = True
+            took_corner = False
+            last_border_tile = border_tile
+            continue
+
+        if not found_2 and not took_corner:
+            if not first_border_condition(first_corner_tile, second_corner_tile, last_border_tile, border_tile):
+                if second_border_condition(first_corner_tile, second_corner_tile, last_border_tile, border_tile):
+                    took_corner = True
+                else:
+                    return False
+        elif not found_2 and took_corner:
+            if not second_border_condition(first_corner_tile, second_corner_tile, last_border_tile, border_tile):
+                return False
+        elif found_2 and not took_corner:
+            if not third_border_condition(second_corner_tile, first_corner_tile, last_border_tile, border_tile):
+                if forth_border_condition(second_corner_tile, first_corner_tile, last_border_tile, border_tile):
+                    took_corner = True
+                else:
+                    return False
+        elif found_2 and took_corner:
+            if not forth_border_condition(second_corner_tile, first_corner_tile, last_border_tile, border_tile):
+                return False
+        else:
+            assert False # should not happen
+        last_border_tile = border_tile
     return True
 
 
